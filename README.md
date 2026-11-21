@@ -1,48 +1,58 @@
-# LivGuard
+# 🛡️ LivGuard Antivirus
 
-# Instalador do LivGuard
+> *"É a proteção que criei para a minha filha e para o mundo."*  
+> — **Flaviofdsx** (Criador)
 
-O instalador é compilado com Inno Setup 6 e publicado como aplicativo Windows x64
-autocontido em .NET 11. A máquina de destino não precisa instalar o runtime do .NET.
+O **LivGuard** é um antivírus open-source para Windows 10/11, construído em **C# (.NET 8)** e **WPF**, inspirado no visual e na performance da linha **Acer Predator**. O projeto foi desenvolvido para unir segurança de nível corporativo com uma interface gamer imersiva.
 
-## Compilar
+![Status](https://img.shields.io/badge/status-active-brightgreen)
+![Versão](https://img.shields.io/badge/versão-v1.2.0-blue)
+![.NET](https://img.shields.io/badge/.NET-8.0-purple)
+![Licença](https://img.shields.io/badge/licença-MIT-green)
 
-1. Instale o .NET 11 SDK e o Inno Setup 6.
-2. Na raiz do projeto, execute:
+---
 
-   ```powershell
-   .\installer\build-installer.ps1
-   ```
+## ✨ Funcionalidades Principais
 
-   Se o compilador não estiver no caminho padrão:
+O LivGuard não é apenas um scanner; é uma suíte completa de segurança e monitoramento.
 
-   ```powershell
-   .\installer\build-installer.ps1 -InnoSetupCompiler "C:\caminho\ISCC.exe"
-   ```
+### 🛡️ Proteção em Tempo Real
+- **File System Shield:** Monitoramento contínuo da pasta `Downloads` e diretórios críticos via `FileSystemWatcher`. Bloqueia e isola arquivos maliciosos automaticamente.
+- **Web Shield & AdBlocker:** Bloqueio de domínios de phishing, rastreadores e anúncios indesejados.
+- **System Integrity:** Monitora alterações suspeitas no Registro do Windows.
+- **Auto-Updater:** Verificação silenciosa de novas assinaturas em background (a cada 24h).
 
-O executável de instalação e seu checksum SHA-256 serão criados em
-`artifacts\installer`. Os arquivos publicados ficam em `artifacts\publish`.
-O checksum detecta corrupção do arquivo; não substitui uma assinatura digital
-nem autentica quem o publicou.
+### 🧠 Motores de Varredura
+- **Varredura por Hash (SHA-256):** Comparação rápida com banco de dados SQLite.
+- **Regras YARA:** Detecção heurística de malware (testado com EICAR).
+- **Memory Scanner:** Varredura de processos em execução na RAM (detecção de fileless malware).
+- **AI File Analyzer:** Heurística simulada por Machine Learning para identificar "droppers".
 
-## O que o instalador faz
+### 🎮 Interface & Usabilidade (Predator Edition)
+- **Design Imersivo:** Janela sem bordas nativas, cantos chanfrados e tema escuro profundo.
+- **Game Mode:** Ao ativar, o app muda para o tema *Vermelho Sangue*, toca um som e tenta acionar o modo Turbo do PredatorSense oficial.
+- **Gráfico Fluido:** Monitor de atividade em tempo real (estilo eletrocardiograma) no painel principal.
+- **Notificações Toast:** Avisos nativos do Windows 11 quando uma ameaça é bloqueada.
 
-- Instala somente para o usuário atual em `%LOCALAPPDATA%\Programs\LivGuard`.
-- Mostra um assistente em português com informações antes da instalação.
-- Cria um atalho no Menu Iniciar; o atalho na Área de Trabalho é opcional e
-  desmarcado por padrão.
-- Não pede elevação, não registra serviço, não cria tarefa agendada, não configura
-  inicialização automática, exclusões do antivírus ou regras de firewall.
-- Não abre o aplicativo automaticamente após instalar.
-- Preserva os dados do usuário ao desinstalar. Dados locais ficam em
-  `%LOCALAPPDATA%\LivGuard` e devem ser removidos manualmente se desejado.
+### 🛠️ Ferramentas Extras
+- **Privacy Shield:** Monitor e bloqueador de processos que tentam acessar Webcam/Microfone.
+- **Otimizador de PC:** Limpador de arquivos temporários e cache do Windows.
+- **Radar de Rede (Wi-Fi):** Lista dispositivos conectados ao seu roteador e alerta sobre intrusos.
+- **Proteção Infantil:** Bloqueio de sites adultos com senha (ideal para famílias).
+- **Cofre (Vault):** Criptografia AES-256 para arquivos confidenciais.
+- **Quarentena:** Isolamento seguro de arquivos infectados com opção de restauração.
+- **Telegram Bot:** Envio de alertas de segurança direto no seu celular.
 
-O instalador não é assinado digitalmente. Uma distribuição pública deve ser assinada
-com um certificado de assinatura de código emitido para o publicador; não use
-certificados autoassinados para contornar o SmartScreen.
+---
 
-## Antes de distribuir publicamente
+## 🏗️ Arquitetura do Projeto
 
-O projeto acompanha o .NET 11 e os pacotes Microsoft.Extensions/Microsoft.Data.Sqlite
-11.0.0. A assinatura digital exige um certificado válido do publicador; o checksum
-SHA-256 sozinho não substitui essa assinatura.
+O projeto segue os princípios de **Clean Architecture** e está dividido em módulos:
+
+```text
+LivGuard/
+├── Flavirus.Core/       # Motor de varredura, YARA, Quarentena, Cofre, WMI.
+├── Flavirus.UI/         # Interface WPF, Tema Predator, Tray Icon, Notificações.
+├── Flavirus.Service/    # Windows Service (opcional) para proteção em background.
+├── Flavirus.Updater/    # Atualizador de assinaturas.
+└── Flavirus.Tests/      # Testes unitários (xUnit) - Ex: Detecção de EICAR.
