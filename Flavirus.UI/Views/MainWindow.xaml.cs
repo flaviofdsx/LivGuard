@@ -2673,7 +2673,8 @@ public partial class MainWindow : Window
         {
             "Gráfico de uso real da CPU, atualizado em tempo real.",
             "Métricas atuais de memória RAM e tráfego de rede.",
-            "Varredura YARA em arquivos de até 500 MiB com leitura em blocos."
+            "Varredura YARA em arquivos de até 500 MiB com leitura em blocos.",
+            "Modo Jogo tenta ativar Alto Desempenho e restaura o plano anterior."
         });
 
         scroll.Content = content;
@@ -2809,10 +2810,20 @@ public partial class MainWindow : Window
             Margin = new Thickness(0, 10, 0, 0),
             FontWeight = FontWeights.Bold
         };
-        gameMode.Click += (_, _) =>
+        gameMode.Click += async (_, _) =>
         {
             var enabled = !App.Config.GameMode;
+            var powerPlan = await Task.Run(() => App.SetGameModePowerPlan(enabled));
             App.SetGameMode(enabled);
+
+            if (!powerPlan.Success)
+            {
+                MessageBox.Show(
+                    powerPlan.Error,
+                    "Modo Jogo",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
 
             if (enabled)
                 _ = TryLaunchPredatorSenseAsync();

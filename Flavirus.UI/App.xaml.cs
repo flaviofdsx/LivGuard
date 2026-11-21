@@ -26,6 +26,7 @@ public partial class App : Application
     public static VaultManager Vault { get; private set; } = null!;
     public static bool GameMode { get; private set; }
     private static FileSystemWatcher? _realTimeWatcher;
+    private static readonly WindowsPowerPlanManager PowerPlanManager = new();
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -79,6 +80,24 @@ public partial class App : Application
                 "Flavirus", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        var result = PowerPlanManager.TryRestore();
+        if (!result.Success)
+        {
+            MessageBox.Show(
+                $"Não foi possível restaurar o plano de energia anterior:{Environment.NewLine}{result.Error}",
+                "Modo Jogo",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+
+        base.OnExit(e);
+    }
+
+    public static (bool Success, string Error) SetGameModePowerPlan(bool enabled) =>
+        enabled ? PowerPlanManager.TryEnable() : PowerPlanManager.TryRestore();
 
     public static void StartRealTimeProtection()
     {
