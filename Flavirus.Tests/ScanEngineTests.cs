@@ -55,6 +55,43 @@ public class ScanEngineTests
     }
 
     [Fact]
+    public void Detects_Eicar_Yara_Signature_InMemory()
+    {
+        var content = System.Text.Encoding.ASCII.GetBytes(
+            "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*");
+
+        var rule = LoadYara().Match(content);
+
+        Assert.Equal("EICAR_Test_File", rule?.Name);
+    }
+
+    [Fact]
+    public async Task Detects_Ransomware_Note_In_TempFile()
+    {
+        var path = Path.Combine(
+            Path.GetTempPath(),
+            "livguard_note_" + Guid.NewGuid() + ".txt");
+
+        try
+        {
+            await File.WriteAllTextAsync(
+                path,
+                "All your files have been encrypted. Send 1 Bitcoin to this address.");
+
+            using var db = new SignatureDatabase(":memory:");
+            var engine = new ScanEngine(db, LoadYara());
+            var result = await engine.ScanFileAsync(path);
+
+            var threat = Assert.Single(result.Threats);
+            Assert.Equal("Ransomware_Note_Pattern", threat.RuleName);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task Detects_Yara_Pattern_In_Large_TextFile()
     {
         var path = Path.Combine(Path.GetTempPath(), "livguard_large_" + Guid.NewGuid() + ".txt");
