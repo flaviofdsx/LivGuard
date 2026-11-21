@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## [Não lançado]
+
+### Aplicativo
+
+- Janela sem bordas agora pode ser redimensionada, com moldura adaptável e tamanho mínimo.
+- Adicionados toasts animados para confirmar ações e apresentar erros sem diálogos modais desnecessários.
+- Cartões de hardware exibem um indicador animado durante o carregamento assíncrono; resultados de uma tela já fechada não são atualizados.
+
 ## [1.2.0] - 2026-11-21
 
 ### Aplicativo

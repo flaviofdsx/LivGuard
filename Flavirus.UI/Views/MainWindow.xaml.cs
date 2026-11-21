@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
 namespace Flavirus.UI.Views;
@@ -352,7 +353,7 @@ public partial class MainWindow : Window
             shield.LoadFromList(new[] { value });
             input.Text = "";
             ShowFirewall();
-            MessageBox.Show($"Regra adicionada: {value}", "Flavirus");
+            LivGuardToast.Show(this, "Firewall", $"Regra adicionada: {value}");
         };
         panel.Children.Add(add);
 
@@ -1566,12 +1567,12 @@ public partial class MainWindow : Window
                         try
                         {
                             await App.Quarantine.RestoreAsync(item.Id, dialog.FileName);
-                            MessageBox.Show("Arquivo restaurado.", "Flavirus");
                             ShowQuarantine();
+                            LivGuardToast.Show(this, "Quarentena", "Arquivo restaurado.");
                         }
                         catch (Exception ex)
                         {
-                            MessageBox.Show($"Erro ao restaurar: {ex.Message}", "Flavirus");
+                            LivGuardToast.Show(this, "Erro ao restaurar", ex.Message, isError: true);
                         }
                     }
                 };
@@ -1781,11 +1782,11 @@ public partial class MainWindow : Window
                             await App.Vault.ExtractAsync(
                                 Path.GetFileNameWithoutExtension(file),
                                 dialog.FileName);
-                            MessageBox.Show("Arquivo extraído com sucesso.", "Flavirus");
+                            LivGuardToast.Show(this, "Cofre", "Arquivo extraído com sucesso.");
                         }
                         catch (Exception ex)
                         {
-                            MessageBox.Show($"Erro ao extrair:\n{ex.Message}", "Flavirus");
+                            LivGuardToast.Show(this, "Erro ao extrair", ex.Message, isError: true);
                         }
                     }
                 };
@@ -2678,6 +2679,12 @@ public partial class MainWindow : Window
             "Manifesto solicita elevação UAC e habilita DPI por monitor.",
             "YARA nativo, analisador PE heurístico e atualizador de hashes MalwareBazaar."
         });
+        AddVersion("v1.2.1", "Refinamento de interface", "Em desenvolvimento", new[]
+        {
+            "Janela sem bordas redimensionável, com limites mínimos e moldura adaptável.",
+            "Avisos in-app com animação para ações concluídas ou com erro.",
+            "Cartões de hardware com indicador animado enquanto os dados são carregados."
+        });
 
         scroll.Content = content;
         Grid.SetRow(scroll, 1);
@@ -2849,13 +2856,13 @@ public partial class MainWindow : Window
         hardwareGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         hardwareGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         hardwareGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        var osCard = CreateCard("SISTEMA", "Carregando...", "kernel protegido", (Brush)FindResource("TextPrimary"));
+        var osCard = CreateSkeletonCard("SISTEMA", "kernel protegido", (Brush)FindResource("TextPrimary"));
         hardwareGrid.Children.Add(osCard);
-        var cpuCard = CreateCard("PROCESSADOR", "Carregando...", "informações de hardware", (Brush)FindResource("AccentCyan"));
+        var cpuCard = CreateSkeletonCard("PROCESSADOR", "informações de hardware", (Brush)FindResource("AccentCyan"));
         cpuCard.Margin = new Thickness(10, 0, 10, 0);
         Grid.SetColumn(cpuCard, 1);
         hardwareGrid.Children.Add(cpuCard);
-        var gpuCard = CreateCard("PLACA DE VÍDEO", "Carregando...", "aceleração de hardware", (Brush)FindResource("TextPrimary"));
+        var gpuCard = CreateSkeletonCard("PLACA DE VÍDEO", "aceleração de hardware", (Brush)FindResource("TextPrimary"));
         gpuCard.Margin = new Thickness(10, 0, 0, 0);
         Grid.SetColumn(gpuCard, 2);
         hardwareGrid.Children.Add(gpuCard);
@@ -2957,7 +2964,7 @@ public partial class MainWindow : Window
 
         ContentArea.Children.Add(mainGrid);
         UpdateClock();
-        _ = LoadDashboardHardwareAsync(osCard, cpuCard, gpuCard);
+        _ = LoadDashboardHardwareAsync(mainGrid, osCard, cpuCard, gpuCard);
     }
 
     private void AddFeedItem(StackPanel parent, string tag, string message, Brush color)
@@ -3012,6 +3019,24 @@ public partial class MainWindow : Window
         return border;
     }
 
+    private Border CreateSkeletonCard(string title, string subText, Brush textColor)
+    {
+        var card = CreateCard(title, "Carregando...", subText, textColor);
+        if (card.Child is StackPanel stack && stack.Children[1] is TextBlock loadingText)
+        {
+            loadingText.Opacity = 0.45;
+            loadingText.BeginAnimation(
+                UIElement.OpacityProperty,
+                new DoubleAnimation(0.45, 0.85, TimeSpan.FromMilliseconds(800))
+                {
+                    AutoReverse = true,
+                    RepeatBehavior = RepeatBehavior.Forever
+                });
+        }
+
+        return card;
+    }
+
     private async Task LoadHardwareAsync(Border systemCard, Border hardwareCard)
     {
         var systemInfo = await Task.Run(() =>
@@ -3049,12 +3074,17 @@ public partial class MainWindow : Window
             return;
 
         if (stack.Children[1] is TextBlock main)
+        {
+            main.BeginAnimation(UIElement.OpacityProperty, null);
+            main.Opacity = 1;
             main.Text = mainText;
+        }
         if (stack.Children[2] is TextBlock sub)
             sub.Text = subText;
     }
 
     private async Task LoadDashboardHardwareAsync(
+        Grid dashboard,
         Border systemCard,
         Border cpuCard,
         Border gpuCard)
@@ -3080,6 +3110,9 @@ public partial class MainWindow : Window
 
         await Dispatcher.InvokeAsync(() =>
         {
+            if (!ContentArea.Children.Contains(dashboard))
+                return;
+
             UpdateCard(systemCard, info.os, "Kernel protegido");
             UpdateCard(cpuCard, info.cpu, info.ram + " RAM total");
             UpdateCard(gpuCard, info.gpu, "Aceleração de hardware");
@@ -3151,11 +3184,10 @@ public partial class MainWindow : Window
                 return;
 
             Dispatcher.Invoke(() =>
-                MessageBox.Show(
-                    "PredatorSense não foi encontrado ou não pôde ser aberto. Ative o modo Turbo manualmente, caso esteja disponível.",
+                LivGuardToast.Show(
+                    this,
                     "Game Mode",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information));
+                    "PredatorSense não foi encontrado ou não pôde ser aberto. Ative o modo Turbo manualmente, caso esteja disponível."));
         });
     }
 
@@ -3164,7 +3196,17 @@ public partial class MainWindow : Window
 
     private void Window_MouseDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ChangedButton == MouseButton.Left)
-            DragMove();
+        if (e.ChangedButton != MouseButton.Left)
+            return;
+
+        if (e.ClickCount == 2)
+        {
+            WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
+            return;
+        }
+
+        DragMove();
     }
 }

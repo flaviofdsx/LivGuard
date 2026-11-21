@@ -33,10 +33,13 @@ O LivGuard não é apenas um scanner; é uma suíte completa de segurança e mon
 
 ### 🎮 Interface & Usabilidade (Predator Edition)
 - **Design Imersivo:** Janela sem bordas nativas, cantos chanfrados e tema escuro profundo.
+- **Janela redimensionável:** A moldura acompanha o tamanho da janela, com limites mínimos para preservar o layout.
+- **Feedback in-app:** Toasts animados informam resultados de ações sem interromper o fluxo com diálogos modais.
+- **Carregamento de hardware:** Cartões mostram um indicador animado enquanto os dados do sistema são consultados em background.
 - **Execução administrativa:** Solicita elevação pelo UAC e habilita DPI por monitor. Como o aplicativo roda com privilégios elevados, aprove o prompt apenas se confiar na cópia executada.
 - **Game Mode:** Muda para o tema *Vermelho Sangue*, tenta ativar o plano Alto Desempenho do Windows quando disponível e restaura o plano anterior ao desativar ou sair.
 - **Gráfico Fluido:** Exibe uso real da CPU, memória RAM e tráfego de rede no painel principal.
-- **Notificações Toast:** Avisos nativos do Windows 11 quando uma ameaça é bloqueada.
+- **Notificações Toast:** Avisos nativos do Windows 11 quando uma ameaça é bloqueada e feedback in-app para ações do usuário.
 
 ### 🛠️ Ferramentas Extras
 - **Privacy Shield:** Monitor e bloqueador de processos que tentam acessar Webcam/Microfone.
