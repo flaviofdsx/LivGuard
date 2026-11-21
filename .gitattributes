@@ -1,0 +1,12 @@
+# Normalize text files and detect text automatically.
+* text=auto
+
+# Preserve Windows line endings for Visual Studio solutions.
+*.sln text eol=crlf
+*.slnx text eol=crlf
+
+# Mark common source and documentation files as text.
+*.cs text diff=csharp
+*.csproj text
+*.xaml text
+*.md text
