@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Flavirus.Core/Flavirus.Core.csproj" />
+  <Project Path="Flavirus.Service/Flavirus.Service.csproj" />
+  <Project Path="Flavirus.Tests/Flavirus.Tests.csproj" />
+  <Project Path="Flavirus.UI/Flavirus.UI.csproj" />
+  <Project Path="Flavirus.Updater/Flavirus.Updater.csproj" />
+</Solution>

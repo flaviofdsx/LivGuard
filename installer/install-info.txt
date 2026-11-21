@@ -1,0 +1,19 @@
+LIVGUARD - INFORMAÇÕES DA INSTALAÇÃO
+
+Este instalador instala o aplicativo LivGuard para a conta atual do Windows em:
+%LOCALAPPDATA%\Programs\LivGuard
+
+O pacote inclui o runtime .NET 11 necessário e não exige instalação separada do .NET.
+O instalador não solicita privilégios de administrador, não instala um serviço do Windows,
+não configura inicialização automática, não altera o Firewall nem cria exclusões no antivírus.
+Ele também não inicia o aplicativo ao terminar. O atalho da Área de Trabalho é opcional.
+
+IMPORTANTE: quando você abrir o LivGuard, o próprio aplicativo inicia recursos locais de
+monitoramento de arquivos em Downloads e de pastas Documentos/Área de Trabalho. O ícone
+permanece na área de notificação; para encerrar, use a opção Sair no menu do ícone.
+
+Os dados locais do aplicativo (histórico, quarentena, cofre e logs) ficam em:
+%LOCALAPPDATA%\LivGuard
+
+Desinstalar o aplicativo não remove esses dados. Revise e remova-os manualmente apenas se
+não precisar mais deles. O instalador não baixa atualizações nem arquivos adicionais.

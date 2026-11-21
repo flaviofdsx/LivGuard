@@ -1,0 +1,84 @@
+﻿<Application x:Class="Flavirus.UI.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <SolidColorBrush x:Key="BgBrush"          Color="#FF090D09"/>
+        <SolidColorBrush x:Key="PanelBrush"       Color="#FF121812"/>
+        <SolidColorBrush x:Key="PanelBorderBrush" Color="#FF1C261C"/>
+        <SolidColorBrush x:Key="AccentGreen"      Color="#FF00FF41"/>
+        <SolidColorBrush x:Key="AccentCyan"       Color="#FF00E5FF"/>
+        <SolidColorBrush x:Key="AlertRed"         Color="#FFFF3D3D"/>
+        <SolidColorBrush x:Key="TextPrimary"      Color="#FFE8F5E8"/>
+        <SolidColorBrush x:Key="TextMuted"        Color="#FF6B7A6B"/>
+
+        <FontFamily x:Key="PredatorFont">Consolas</FontFamily>
+
+        <Style x:Key="SidebarButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="FontFamily" Value="{StaticResource PredatorFont}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bg" Background="{TemplateBinding Background}"
+                                BorderBrush="Transparent" BorderThickness="3,0,0,0">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="#FF141A14"/>
+                                <Setter TargetName="bg" Property="BorderBrush" Value="{StaticResource AccentCyan}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource AccentCyan}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PredatorToggle" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <StackPanel Orientation="Horizontal">
+                            <Border x:Name="track" Width="50" Height="24"
+                                    Background="#FF1A241A" CornerRadius="12"
+                                    BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1">
+                                <Border x:Name="thumb" Width="18" Height="18"
+                                        CornerRadius="9"
+                                        Background="{StaticResource TextMuted}"
+                                        HorizontalAlignment="Left"
+                                        Margin="3,0,0,0"/>
+                            </Border>
+                            <TextBlock x:Name="lbl" Text="OFF" Margin="12,0,0,0"
+                                       Foreground="{StaticResource AlertRed}"
+                                       FontFamily="{StaticResource PredatorFont}"
+                                       FontWeight="Bold" FontSize="13"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="thumb" Property="Background" Value="{StaticResource AccentCyan}"/>
+                                <Setter TargetName="thumb" Property="HorizontalAlignment" Value="Right"/>
+                                <Setter TargetName="thumb" Property="Margin" Value="0,0,3,0"/>
+                                <Setter TargetName="track" Property="BorderBrush" Value="{StaticResource AccentCyan}"/>
+                                <Setter TargetName="lbl" Property="Text" Value="ON"/>
+                                <Setter TargetName="lbl" Property="Foreground" Value="{StaticResource AccentCyan}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Application.Resources>
+</Application>

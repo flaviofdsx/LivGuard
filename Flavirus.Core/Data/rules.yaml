@@ -1,0 +1,55 @@
+﻿- name: EICAR_Test_File
+  description: Arquivo de teste EICAR - padrao universal de antivirus
+  severity: 2
+  strings:
+    - "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE"
+  hex: []
+
+- name: Suspicious_PowerShell_Download
+  description: PowerShell baixando executavel da internet
+  severity: 2
+  strings:
+    - "DownloadString"
+    - "Invoke-WebRequest"
+    - "IEX("
+  hex: []
+
+- name: Ransomware_Note_Pattern
+  description: Possivel nota de resgate
+  severity: 3
+  strings:
+    - "your files have been encrypted"
+    - "sua conta sera deletada"
+    - "bitcoin address"
+  hex: []
+
+- name: Meterpreter_Shellcode
+  description: Assinatura de shellcode Meterpreter
+  severity: 3
+  strings:
+    - "metsrv.dll"
+    - "ReflectiveLoader"
+  hex: []
+
+- name: Heuristica_WannaCry_NaoVerificada
+  description: Indicador experimental nao verificado associado a WannaCry; pode gerar falsos positivos
+  severity: 1
+  strings:
+    - "WNcry@2ol7"
+    - "@WanaDecryptor@.exe"
+  hex: []
+
+- name: Heuristica_Stuxnet_NaoVerificada
+  description: Indicador experimental nao verificado associado a Stuxnet; pode gerar falsos positivos
+  severity: 1
+  strings:
+    - "~WTR4132.tmp"
+    - "~WTR4141.tmp"
+  hex: []
+
+- name: Heuristica_NotPetya_NaoVerificada
+  description: Indicador experimental nao verificado associado a NotPetya; pode gerar falsos positivos
+  severity: 1
+  strings:
+    - "perfc.dat"
+  hex: []

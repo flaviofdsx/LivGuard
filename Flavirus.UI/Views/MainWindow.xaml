@@ -1,0 +1,130 @@
+﻿<Window x:Class="Flavirus.UI.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="LIVGUARD // by Flaviofdsx"
+        Icon="pack://application:,,,/app.ico"
+        Height="720" Width="1180"
+        Background="Transparent"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="{StaticResource PredatorFont}">
+    <Grid MouseLeftButtonDown="Window_MouseDown">
+        <Path Stroke="{StaticResource AccentCyan}" StrokeThickness="2"
+              Fill="{StaticResource BgBrush}">
+            <Path.Data>
+                <PathGeometry>
+                    <PathFigure StartPoint="30,0" IsClosed="True">
+                        <LineSegment Point="1150,0"/>
+                        <LineSegment Point="1180,30"/>
+                        <LineSegment Point="1180,690"/>
+                        <LineSegment Point="1150,720"/>
+                        <LineSegment Point="30,720"/>
+                        <LineSegment Point="0,690"/>
+                        <LineSegment Point="0,30"/>
+                    </PathFigure>
+                </PathGeometry>
+            </Path.Data>
+        </Path>
+
+        <Grid Margin="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="42"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="28"/>
+            </Grid.RowDefinitions>
+            
+            <!-- HEADER -->
+            <Border Grid.Row="0" Background="#FF0D120D"
+                    BorderBrush="{StaticResource PanelBorderBrush}"
+                    BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                        <Ellipse Width="8" Height="8" Fill="{StaticResource AccentGreen}" Margin="0,0,10,0"/>
+                        <TextBlock Text="LIVGUARD" Foreground="{StaticResource AccentGreen}"
+                                   FontWeight="Bold" FontSize="14"/>
+                        <TextBlock Text=" // by Flaviofdsx" Foreground="{StaticResource TextMuted}"
+                                   FontSize="12" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="ClockText" Foreground="{StaticResource TextMuted}"
+                                   FontSize="12" Margin="0,0,20,0" VerticalAlignment="Center"/>
+                        <Button Content="â€”" Width="36" Height="28" Click="Minimize_Click"
+                                Background="Transparent" Foreground="{StaticResource TextMuted}"
+                                BorderThickness="0" FontWeight="Bold"/>
+                        <Button Content="X" Width="36" Height="28" Click="Close_Click"
+                                Background="Transparent" Foreground="{StaticResource AlertRed}"
+                                BorderThickness="0" FontWeight="Bold"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- CONTEUDO -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="230"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- SIDEBAR -->
+                <Border Grid.Column="0" Background="{StaticResource PanelBrush}"
+                        BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,0,1,0">
+                    <StackPanel Margin="0,20,0,0">
+                        <TextBlock Text=">> STATUS" Foreground="{StaticResource TextMuted}"
+                                   FontSize="10" FontWeight="Bold" Margin="20,0,0,10"/>
+                        <Button Content="PAINEL"      Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="Painel"/>
+                        <Button Content="VARREDURAS"  Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="Scans"/>
+                        <Button Content="QUARENTENA"  Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="Quarantine"/>
+                        <Button Content="COFRE"       Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="Vault"/>
+                        <Button Content="FIREWALL"    Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="Firewall"/>
+                        <Button Content="IA GUARD"    Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="AI"/>
+                        <Button Content="PRIVACY"     Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="Privacy"/>
+                        <Button Content="OTIMIZADOR"  Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="Cleanup"/>
+                        <Button Content="RADAR WI-FI" Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="Network"/>
+                        <Button Content="PROTEÇÃO INFANTIL" Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="ChildLock"/>
+
+                        <TextBlock Text=">> SISTEMA" Foreground="{StaticResource TextMuted}"
+                                   FontSize="10" FontWeight="Bold" Margin="20,30,0,10"/>
+                        <Button Content="CONFIG"      Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="Config"/>
+                        <Button Content="LOGS"        Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="Logs"/>
+                        <Button Content="SOBRE"       Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="About"/>
+                        <Button Content="RELEASE NOTES" Style="{StaticResource SidebarButton}" Click="Nav_Click" Tag="ReleaseNotes"/>
+
+                        <Border Background="#FF0D120D" CornerRadius="6" Margin="16,40,16,0" Padding="14">
+                            <StackPanel>
+                                <TextBlock Text="ASSINATURAS" Foreground="{StaticResource TextMuted}" FontSize="9" FontWeight="Bold"/>
+                                <TextBlock Text="v2.14.089" Foreground="{StaticResource AccentCyan}" FontSize="14" FontWeight="Bold" Margin="0,4,0,0"/>
+                                <TextBlock Text="ATUALIZADO HOJE" Foreground="{StaticResource TextMuted}" FontSize="9" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- AREA PRINCIPAL (ScrollViewer para telas que crescem) -->
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                    <Grid x:Name="ContentArea" Margin="24">
+                        <!-- Aqui o codigo C# vai injetar as telas -->
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- FOOTER -->
+            <Border Grid.Row="2" Background="#FF0D120D"
+                    BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,1,0,0">
+                <Grid Margin="16,0">
+                    <TextBlock Text="LIVGUARD ANTIVIRUS - PRODUCED BY FLAVIOFDSX"
+                               Foreground="{StaticResource TextMuted}" FontSize="10"
+                               VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ConnectionStatus" Text="[ ONLINE ]"
+                               Foreground="{StaticResource AccentGreen}"
+                               FontSize="10" FontWeight="Bold"
+                               HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
