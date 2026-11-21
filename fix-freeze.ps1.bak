@@ -1,0 +1,596 @@
+# ============================================================
+#  FLAVIRUS - FIX FINAL (compativel com .sln E .slnx)
+# ============================================================
+$ErrorActionPreference = "Stop"
+$root = Get-Location
+
+# Detecta o arquivo de solucao (.sln ou .slnx)
+$sln = Get-ChildItem -Path $root -Include "*.sln","*.slnx" -File -ErrorAction SilentlyContinue |
+       Select-Object -First 1
+
+if (-not $sln) {
+    Write-Host "ERRO: nenhum arquivo .sln ou .slnx encontrado na pasta atual." -ForegroundColor Red
+    Write-Host "Pasta atual: $root" -ForegroundColor Yellow
+    Write-Host "Certifique-se de estar na raiz do projeto Flavirus." -ForegroundColor Yellow
+    exit 1
+}
+
+$slnFile = $sln.Name
+Write-Host "`n=== FLAVIRUS: FIX FINAL ===" -ForegroundColor Cyan
+Write-Host "Solucao detectada: $slnFile" -ForegroundColor Green
+
+function Write-FileForce {
+    param([string]$Path, [string]$Content)
+    $full = Join-Path $root $Path
+    $dir  = Split-Path $full -Parent
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    Set-Content -Path $full -Value $Content -Encoding UTF8
+    Write-Host "  [ok] $Path" -ForegroundColor Green
+}
+
+# ==========================================================
+#  1) App.xaml
+# ==========================================================
+Write-Host "`n[1/6] App.xaml..." -ForegroundColor Yellow
+
+Write-FileForce "Flavirus.UI/App.xaml" @'
+<Application x:Class="Flavirus.UI.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <SolidColorBrush x:Key="BgBrush"          Color="#FF0A0E0A"/>
+        <SolidColorBrush x:Key="PanelBrush"       Color="#FF111611"/>
+        <SolidColorBrush x:Key="PanelBorderBrush" Color="#FF1F2B1F"/>
+        <SolidColorBrush x:Key="AccentGreen"      Color="#FF00FF41"/>
+        <SolidColorBrush x:Key="AccentCyan"       Color="#FF00E5FF"/>
+        <SolidColorBrush x:Key="AlertRed"         Color="#FFFF3D3D"/>
+        <SolidColorBrush x:Key="TextPrimary"      Color="#FFE8F5E8"/>
+        <SolidColorBrush x:Key="TextMuted"        Color="#FF6B7A6B"/>
+
+        <FontFamily x:Key="PredatorFont">Consolas</FontFamily>
+
+        <Style x:Key="SidebarButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="FontFamily" Value="{StaticResource PredatorFont}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bg" Background="{TemplateBinding Background}"
+                                BorderBrush="Transparent" BorderThickness="3,0,0,0">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="#FF141A14"/>
+                                <Setter TargetName="bg" Property="BorderBrush" Value="{StaticResource AccentGreen}"/>
+                                <Setter Property="Foreground" Value="{StaticResource AccentGreen}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PredatorToggle" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <StackPanel Orientation="Horizontal">
+                            <Border x:Name="track" Width="60" Height="28"
+                                    Background="#FF1A1F1A" CornerRadius="14"
+                                    BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1">
+                                <Border x:Name="thumb" Width="22" Height="22"
+                                        CornerRadius="11"
+                                        Background="{StaticResource TextMuted}"
+                                        HorizontalAlignment="Left"
+                                        Margin="3,0,0,0"/>
+                            </Border>
+                            <TextBlock x:Name="lbl" Text="OFF" Margin="12,0,0,0"
+                                       Foreground="{StaticResource AlertRed}"
+                                       FontFamily="{StaticResource PredatorFont}"
+                                       FontWeight="Bold" FontSize="13"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="thumb" Property="Background" Value="{StaticResource AccentGreen}"/>
+                                <Setter TargetName="thumb" Property="HorizontalAlignment" Value="Right"/>
+                                <Setter TargetName="thumb" Property="Margin" Value="0,0,3,0"/>
+                                <Setter TargetName="track" Property="BorderBrush" Value="{StaticResource AccentGreen}"/>
+                                <Setter TargetName="lbl" Property="Text" Value="ON"/>
+                                <Setter TargetName="lbl" Property="Foreground" Value="{StaticResource AccentGreen}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Application.Resources>
+</Application>
+'@
+
+# ==========================================================
+#  2) MainWindow.xaml
+# ==========================================================
+Write-Host "`n[2/6] MainWindow.xaml..." -ForegroundColor Yellow
+
+Write-FileForce "Flavirus.UI/Views/MainWindow.xaml" @'
+<Window x:Class="Flavirus.UI.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="FLAVIRUS // PREDATOR EDITION"
+        Height="720" Width="1180"
+        Background="{StaticResource BgBrush}"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="{StaticResource PredatorFont}">
+    <Border BorderBrush="{StaticResource AccentGreen}" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="42"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="28"/>
+            </Grid.RowDefinitions>
+            <Border Grid.Row="0" Background="#FF0D120D"
+                    BorderBrush="{StaticResource PanelBorderBrush}"
+                    BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                        <Ellipse Width="8" Height="8" Fill="{StaticResource AccentGreen}" Margin="0,0,10,0"/>
+                        <TextBlock Text="FLAVIRUS" Foreground="{StaticResource AccentGreen}"
+                                   FontWeight="Bold" FontSize="14"/>
+                        <TextBlock Text=" // PREDATOR EDITION" Foreground="{StaticResource TextMuted}"
+                                   FontSize="12" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="ClockText" Foreground="{StaticResource TextMuted}"
+                                   FontSize="12" Margin="0,0,20,0" VerticalAlignment="Center"/>
+                        <Button Content="—" Width="36" Height="28" Click="Minimize_Click"
+                                Background="Transparent" Foreground="{StaticResource TextMuted}"
+                                BorderThickness="0" FontWeight="Bold"/>
+                        <Button Content="✕" Width="36" Height="28" Click="Close_Click"
+                                Background="Transparent" Foreground="{StaticResource AlertRed}"
+                                BorderThickness="0" FontWeight="Bold"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="230"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Background="{StaticResource PanelBrush}"
+                        BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,0,1,0">
+                    <StackPanel Margin="0,20,0,0">
+                        <TextBlock Text="» STATUS" Foreground="{StaticResource TextMuted}"
+                                   FontSize="10" FontWeight="Bold" Margin="20,0,0,10"/>
+                        <Button Content="▸  PAINEL"      Style="{StaticResource SidebarButton}" Margin="0,2"/>
+                        <Button Content="▸  VARREDURAS"  Style="{StaticResource SidebarButton}" Margin="0,2"/>
+                        <Button Content="▸  QUARENTENA"  Style="{StaticResource SidebarButton}" Margin="0,2"/>
+                        <Button Content="▸  COFRE"       Style="{StaticResource SidebarButton}" Margin="0,2"/>
+                        <Button Content="▸  FIREWALL"    Style="{StaticResource SidebarButton}" Margin="0,2"/>
+                        <Button Content="▸  IA GUARD"    Style="{StaticResource SidebarButton}" Margin="0,2"/>
+                        <TextBlock Text="» SISTEMA" Foreground="{StaticResource TextMuted}"
+                                   FontSize="10" FontWeight="Bold" Margin="20,30,0,10"/>
+                        <Button Content="▸  CONFIG"      Style="{StaticResource SidebarButton}" Margin="0,2"/>
+                        <Button Content="▸  LOGS"        Style="{StaticResource SidebarButton}" Margin="0,2"/>
+                        <Border Background="#FF0D120D" CornerRadius="6" Margin="16,40,16,0" Padding="14">
+                            <StackPanel>
+                                <TextBlock Text="ASSINATURAS" Foreground="{StaticResource TextMuted}"
+                                           FontSize="9" FontWeight="Bold"/>
+                                <TextBlock Text="v2.14.089" Foreground="{StaticResource AccentCyan}"
+                                           FontSize="14" FontWeight="Bold" Margin="0,4,0,0"/>
+                                <TextBlock Text="ATUALIZADO HOJE" Foreground="{StaticResource TextMuted}"
+                                           FontSize="9" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <Grid Grid.Column="1" Margin="24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Background="{StaticResource PanelBrush}"
+                            BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1"
+                            CornerRadius="10" Padding="28">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="90" Height="90" CornerRadius="45"
+                                    Background="#FF0D120D" BorderBrush="{StaticResource AccentGreen}"
+                                    BorderThickness="2">
+                                <TextBlock Text="&#x1F6E1;" FontSize="44" HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Center">
+                                <TextBlock x:Name="StatusTitle" Text="SISTEMA PROTEGIDO"
+                                           Foreground="{StaticResource AccentGreen}"
+                                           FontWeight="Bold" FontSize="22"/>
+                                <TextBlock x:Name="StatusSubtitle"
+                                           Text="Todos os shields ativos · Definições atualizadas"
+                                           Foreground="{StaticResource TextMuted}"
+                                           FontSize="12" Margin="0,4,0,0"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <Border Background="#FF0D120D" CornerRadius="4" Padding="10,4" Margin="0,0,8,0"
+                                            BorderBrush="{StaticResource AccentGreen}" BorderThickness="1,0,0,0">
+                                        <TextBlock Text="FILE SHIELD ✓" Foreground="{StaticResource AccentGreen}"
+                                                   FontSize="10" FontWeight="Bold"/>
+                                    </Border>
+                                    <Border Background="#FF0D120D" CornerRadius="4" Padding="10,4" Margin="0,0,8,0"
+                                            BorderBrush="{StaticResource AccentGreen}" BorderThickness="1,0,0,0">
+                                        <TextBlock Text="WEB SHIELD ✓" Foreground="{StaticResource AccentGreen}"
+                                                   FontSize="10" FontWeight="Bold"/>
+                                    </Border>
+                                    <Border Background="#FF0D120D" CornerRadius="4" Padding="10,4"
+                                            BorderBrush="{StaticResource AccentGreen}" BorderThickness="1,0,0,0">
+                                        <TextBlock Text="AI GUARD ✓" Foreground="{StaticResource AccentGreen}"
+                                                   FontSize="10" FontWeight="Bold"/>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                <TextBlock Text="PROTEÇÃO GERAL" Foreground="{StaticResource TextMuted}"
+                                           FontSize="10" FontWeight="Bold"
+                                           HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                                <CheckBox x:Name="ToggleMaster" Style="{StaticResource PredatorToggle}"
+                                          IsChecked="True"
+                                          Checked="ToggleMaster_Changed" Unchecked="ToggleMaster_Changed"
+                                          HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Grid Grid.Row="1" Margin="0,20,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="» TELEMETRIA" Foreground="{StaticResource TextMuted}"
+                                   FontSize="10" FontWeight="Bold" Margin="0,0,0,12"/>
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Background="{StaticResource PanelBrush}"
+                                    BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1"
+                                    CornerRadius="8" Padding="20" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="ARQUIVOS ESCANEADOS" Foreground="{StaticResource TextMuted}"
+                                               FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock x:Name="FilesScannedText" Text="0" Foreground="{StaticResource AccentCyan}"
+                                               FontSize="36" FontWeight="Bold" Margin="0,8,0,4"/>
+                                    <TextBlock Text="sessão atual" Foreground="{StaticResource TextMuted}" FontSize="11"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="1" Background="{StaticResource PanelBrush}"
+                                    BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1"
+                                    CornerRadius="8" Padding="20" Margin="4,0">
+                                <StackPanel>
+                                    <TextBlock Text="AMEAÇAS BLOQUEADAS" Foreground="{StaticResource TextMuted}"
+                                               FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock x:Name="ThreatsText" Text="0" Foreground="{StaticResource AlertRed}"
+                                               FontSize="36" FontWeight="Bold" Margin="0,8,0,4"/>
+                                    <TextBlock Text="tempo real" Foreground="{StaticResource TextMuted}" FontSize="11"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2" Background="{StaticResource PanelBrush}"
+                                    BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1"
+                                    CornerRadius="8" Padding="20" Margin="8,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="TEMPO DE PROTEÇÃO" Foreground="{StaticResource TextMuted}"
+                                               FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock x:Name="UptimeText" Text="00:00:00" Foreground="{StaticResource AccentGreen}"
+                                               FontSize="36" FontWeight="Bold" Margin="0,8,0,4"/>
+                                    <TextBlock Text="sem interrupções" Foreground="{StaticResource TextMuted}" FontSize="11"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Grid>
+            <Border Grid.Row="2" Background="#FF0D120D"
+                    BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,1,0,0">
+                <Grid Margin="16,0">
+                    <TextBlock Text="FLAVIRUS CORE ENGINE · BUILD 2025.11 · PREDATOR EDITION"
+                               Foreground="{StaticResource TextMuted}" FontSize="10"
+                               VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ConnectionStatus" Text="◉ ONLINE"
+                               Foreground="{StaticResource AccentGreen}"
+                               FontSize="10" FontWeight="Bold"
+                               HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>
+'@
+
+# ==========================================================
+#  3) MainWindow.xaml.cs
+# ==========================================================
+Write-Host "`n[3/6] MainWindow.xaml.cs..." -ForegroundColor Yellow
+
+Write-FileForce "Flavirus.UI/Views/MainWindow.xaml.cs" @'
+using System.Windows;
+using System.Windows.Threading;
+
+namespace Flavirus.UI.Views;
+
+public partial class MainWindow : Window
+{
+    private readonly DispatcherTimer _timer;
+    private readonly DateTime _start = DateTime.UtcNow;
+
+    public MainWindow()
+    {
+        try
+        {
+            InitializeComponent();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Erro ao carregar XAML:\n\n{ex.Message}\n\n{ex.InnerException?.Message}",
+                "Flavirus - Erro XAML", MessageBoxButton.OK, MessageBoxImage.Error);
+            throw;
+        }
+
+        _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _timer.Tick += (_, _) => UpdateClock();
+        _timer.Start();
+        UpdateClock();
+    }
+
+    private void UpdateClock()
+    {
+        try
+        {
+            ClockText.Text = DateTime.Now.ToString("HH:mm:ss");
+            var up = DateTime.UtcNow - _start;
+            UptimeText.Text = $"{(int)up.TotalHours:D2}:{up.Minutes:D2}:{up.Seconds:D2}";
+            ConnectionStatus.Text = App.Config.ProtectionEnabled ? "◉ ONLINE" : "◯ PAUSADO";
+            ConnectionStatus.Foreground = App.Config.ProtectionEnabled
+                ? (System.Windows.Media.Brush)FindResource("AccentGreen")
+                : (System.Windows.Media.Brush)FindResource("AlertRed");
+            StatusTitle.Text = App.Config.ProtectionEnabled ? "SISTEMA PROTEGIDO" : "PROTEÇÃO DESLIGADA";
+            StatusTitle.Foreground = App.Config.ProtectionEnabled
+                ? (System.Windows.Media.Brush)FindResource("AccentGreen")
+                : (System.Windows.Media.Brush)FindResource("AlertRed");
+            StatusSubtitle.Text = App.Config.ProtectionEnabled
+                ? "Todos os shields ativos · Definições atualizadas"
+                : "Nenhum shield está protegendo seu sistema";
+        }
+        catch { }
+    }
+
+    private void ToggleMaster_Changed(object sender, RoutedEventArgs e)
+    {
+        App.Config.ProtectionEnabled = ToggleMaster.IsChecked == true;
+        UpdateClock();
+    }
+
+    private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    private void Close_Click(object sender, RoutedEventArgs e) => Hide();
+}
+'@
+
+# ==========================================================
+#  4) TrayIconManager.cs
+# ==========================================================
+Write-Host "`n[4/6] TrayIconManager.cs..." -ForegroundColor Yellow
+
+Write-FileForce "Flavirus.UI/TrayIconManager.cs" @'
+using System.Windows;
+using System.Windows.Controls;
+using Flavirus.UI.Views;
+using Hardcodet.Wpf.TaskbarNotification;
+
+namespace Flavirus.UI;
+
+public class TrayIconManager
+{
+    private TaskbarIcon? _icon;
+    private MenuItem? _toggleItem;
+
+    public void Initialize()
+    {
+        _icon = new TaskbarIcon
+        {
+            Icon = System.Drawing.SystemIcons.Shield,
+            ToolTipText = "FLAVIRUS · Protegido"
+        };
+
+        var menu = new ContextMenu();
+        var open = new MenuItem { Header = "Abrir painel Flavirus" };
+        open.Click += (_, _) => ShowMainWindow();
+        _toggleItem = new MenuItem { Header = "Desligar proteção", IsCheckable = true, IsChecked = true };
+        _toggleItem.Click += (_, _) => ToggleProtection();
+        var scan = new MenuItem { Header = "Varredura rápida" };
+        scan.Click += async (_, _) => await RunQuickScan();
+        var exit = new MenuItem { Header = "Sair" };
+        exit.Click += (_, _) => Application.Current.Shutdown();
+
+        menu.Items.Add(open);
+        menu.Items.Add(new Separator());
+        menu.Items.Add(_toggleItem);
+        menu.Items.Add(scan);
+        menu.Items.Add(new Separator());
+        menu.Items.Add(exit);
+        _icon.ContextMenu = menu;
+        _icon.TrayMouseDoubleClick += (_, _) => ShowMainWindow();
+    }
+
+    private void ToggleProtection()
+    {
+        App.Config.ProtectionEnabled = !App.Config.ProtectionEnabled;
+        if (_toggleItem != null)
+        {
+            _toggleItem.IsChecked = App.Config.ProtectionEnabled;
+            _toggleItem.Header = App.Config.ProtectionEnabled ? "Desligar proteção" : "Ligar proteção";
+        }
+        if (_icon != null)
+        {
+            _icon.ToolTipText = App.Config.ProtectionEnabled
+                ? "FLAVIRUS · Protegido" : "FLAVIRUS · DESLIGADO";
+        }
+    }
+
+    private async Task RunQuickScan()
+    {
+        var downloads = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+        var r = await App.Engine.ScanDirectoryAsync(downloads);
+        _icon?.ShowBalloonTip("FLAVIRUS",
+            $"Scan: {r.FilesScanned} arquivos · {r.ThreatsFound} ameaças.",
+            BalloonIcon.Info);
+    }
+
+    public void ShowMainWindow()
+    {
+        try
+        {
+            foreach (Window w in Application.Current.Windows)
+            {
+                if (w is MainWindow)
+                {
+                    if (w.WindowState == WindowState.Minimized)
+                        w.WindowState = WindowState.Normal;
+                    w.Show();
+                    w.Activate();
+                    w.Topmost = true;
+                    w.Topmost = false;
+                    w.Focus();
+                    return;
+                }
+            }
+            var win = new MainWindow();
+            win.Show();
+            win.Activate();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Falha ao abrir painel:\n\n{ex.Message}\n\n{ex.InnerException?.Message}",
+                "Flavirus", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+}
+'@
+
+# ==========================================================
+#  5) App.xaml.cs
+# ==========================================================
+Write-Host "`n[5/6] App.xaml.cs..." -ForegroundColor Yellow
+
+Write-FileForce "Flavirus.UI/App.xaml.cs" @'
+using System.IO;
+using System.Windows;
+using Flavirus.Core.Behavior;
+using Flavirus.Core.Engine;
+using Flavirus.Core.Models;
+using Flavirus.Core.Quarantine;
+using Flavirus.Core.Ransomware;
+using Flavirus.Core.Web;
+
+namespace Flavirus.UI;
+
+public partial class App : Application
+{
+    public static FlavirusConfig Config { get; } = new();
+    public static ScanEngine Engine { get; private set; } = null!;
+    public static WebShield Web { get; private set; } = null!;
+    public static BehaviorShield Behavior { get; private set; } = null!;
+    public static RansomwareShield? Ransomware { get; private set; }
+    public static QuarantineManager Quarantine { get; private set; } = null!;
+
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        base.OnStartup(e);
+        DispatcherUnhandledException += (_, ex) =>
+        {
+            try { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "crash.log"), ex.Exception.ToString()); } catch { }
+            MessageBox.Show($"Erro: {ex.Exception.Message}", "Flavirus",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+            ex.Handled = true;
+        };
+        try
+        {
+            var baseDir = AppContext.BaseDirectory;
+            var db = new SignatureDatabase(Path.Combine(baseDir, Config.SignatureDbPath));
+            var yara = new YaraEngine();
+            var rulesPath = Path.Combine(baseDir, "Data", "rules.yaml");
+            if (!File.Exists(rulesPath)) rulesPath = Path.Combine(baseDir, "rules.yaml");
+            if (File.Exists(rulesPath)) yara.LoadRules(RuleLoader.LoadFromYaml(rulesPath));
+            Engine = new ScanEngine(db, yara);
+            Web = new WebShield();
+            Web.LoadFromList(new[] { "malware-test.com", "phishing-example.org" });
+            Behavior = new BehaviorShield();
+            Quarantine = new QuarantineManager(Path.Combine(baseDir, Config.QuarantinePath));
+            Task.Run(() =>
+            {
+                try
+                {
+                    Ransomware = new RansomwareShield();
+                    var dirs = new[] {
+                        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                        Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+                    }.Where(Directory.Exists).ToArray();
+                    if (dirs.Length > 0) Ransomware.Start(dirs);
+                }
+                catch { }
+            });
+            new TrayIconManager().Initialize();
+            var mainWin = new Views.MainWindow();
+            mainWin.Show();
+        }
+        catch (Exception ex)
+        {
+            try { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "crash.log"), ex.ToString()); } catch { }
+            MessageBox.Show(
+                $"Flavirus falhou ao iniciar:\n\n{ex.Message}\n\nVeja crash.log na pasta do app.",
+                "Flavirus", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+}
+'@
+
+# ==========================================================
+#  6) BUILD (usa o nome do .sln/.slnx detectado)
+# ==========================================================
+Write-Host "`n[6/6] Limpando bin/obj e buildando $slnFile..." -ForegroundColor Yellow
+
+Get-ChildItem -Path $root -Include bin,obj -Recurse -Directory -ErrorAction SilentlyContinue |
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+dotnet build $slnFile -c Debug
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "`n❌ BUILD FALHOU" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "`n============================================" -ForegroundColor Green
+Write-Host " ✅ FIX FINAL APLICADO" -ForegroundColor Green
+Write-Host "============================================" -ForegroundColor Green
+Write-Host ""
+Write-Host "Rodar o app:" -ForegroundColor Yellow
+Write-Host "  dotnet run --project Flavirus.UI" -ForegroundColor White
