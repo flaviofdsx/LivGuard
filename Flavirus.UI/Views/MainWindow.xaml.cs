@@ -2671,10 +2671,11 @@ public partial class MainWindow : Window
         });
         AddVersion("v1.2.0", "Live Graph", "Fase 7", new[]
         {
-            "Gráfico de uso real da CPU, atualizado em tempo real.",
-            "Métricas atuais de memória RAM e tráfego de rede.",
-            "Varredura YARA em arquivos de até 500 MiB com leitura em blocos.",
-            "Modo Jogo tenta ativar Alto Desempenho e restaura o plano anterior."
+            "Gráfico de CPU e métricas reais de memória RAM e tráfego de rede.",
+            "Varredura YARA em blocos para arquivos menores que 500 MiB.",
+            "Assinaturas EICAR e de notas de resgate, cobertas por testes xUnit seguros.",
+            "Modo Jogo tenta ativar Alto Desempenho e restaura o plano anterior quando disponível.",
+            "Licença MIT, EditorConfig, atributos Git e CI Windows com .NET 11."
         });
 
         scroll.Content = content;

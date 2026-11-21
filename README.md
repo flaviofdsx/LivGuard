@@ -3,12 +3,14 @@
 > *"É a proteção que criei para a minha filha e para o mundo."*  
 > — **Flaviofdsx** (Criador)
 
-O **LivGuard** é um antivírus open-source para Windows 10/11, construído em **C# (.NET 8)** e **WPF**, inspirado no visual e na performance da linha **Acer Predator**. O projeto foi desenvolvido para unir segurança de nível corporativo com uma interface gamer imersiva.
+O **LivGuard** é um antivírus open-source para Windows 10/11, construído em **C# (.NET 11)** e **WPF**, inspirado no visual e na performance da linha **Acer Predator**. O projeto foi desenvolvido para unir segurança de nível corporativo com uma interface gamer imersiva.
 
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 ![Versão](https://img.shields.io/badge/versão-v1.2.0-blue)
-![.NET](https://img.shields.io/badge/.NET-8.0-purple)
+![.NET](https://img.shields.io/badge/.NET-11-purple)
 ![Licença](https://img.shields.io/badge/licença-MIT-green)
+
+[Histórico de versões](CHANGELOG.md)
 
 ---
 
@@ -24,14 +26,14 @@ O LivGuard não é apenas um scanner; é uma suíte completa de segurança e mon
 
 ### 🧠 Motores de Varredura
 - **Varredura por Hash (SHA-256):** Comparação rápida com banco de dados SQLite.
-- **Regras YARA:** Detecção heurística de malware (testado com EICAR).
+- **Regras YARA:** Assinaturas EICAR e de notas de resgate, com varredura em blocos para arquivos menores que 500 MiB.
 - **Memory Scanner:** Varredura de processos em execução na RAM (detecção de fileless malware).
 - **AI File Analyzer:** Heurística simulada por Machine Learning para identificar "droppers".
 
 ### 🎮 Interface & Usabilidade (Predator Edition)
 - **Design Imersivo:** Janela sem bordas nativas, cantos chanfrados e tema escuro profundo.
-- **Game Mode:** Ao ativar, o app muda para o tema *Vermelho Sangue*, toca um som e tenta acionar o modo Turbo do PredatorSense oficial.
-- **Gráfico Fluido:** Monitor de atividade em tempo real (estilo eletrocardiograma) no painel principal.
+- **Game Mode:** Muda para o tema *Vermelho Sangue*, tenta ativar o plano Alto Desempenho do Windows quando disponível e restaura o plano anterior ao desativar ou sair.
+- **Gráfico Fluido:** Exibe uso real da CPU, memória RAM e tráfego de rede no painel principal.
 - **Notificações Toast:** Avisos nativos do Windows 11 quando uma ameaça é bloqueada.
 
 ### 🛠️ Ferramentas Extras
@@ -42,6 +44,42 @@ O LivGuard não é apenas um scanner; é uma suíte completa de segurança e mon
 - **Cofre (Vault):** Criptografia AES-256 para arquivos confidenciais.
 - **Quarentena:** Isolamento seguro de arquivos infectados com opção de restauração.
 - **Telegram Bot:** Envio de alertas de segurança direto no seu celular.
+
+---
+
+## 🖼️ Capturas de tela
+
+### Painel inicial
+
+![Painel inicial do LivGuard](assets/screenshots/painel-inicial.png)
+
+O painel reúne o estado geral da proteção, informações do sistema, eventos recentes e um gráfico de atividade. Os valores de CPU, RAM e rede são leituras do computador no momento da captura.
+
+### Telemetria
+
+![Painel do LivGuard com telemetria](assets/screenshots/painel-telemetria.png)
+
+Exemplo do gráfico de atividade com percentuais de CPU e RAM e tráfego de rede em tempo real. Esses valores variam conforme o uso da máquina.
+
+### IA Guard
+
+![Tela IA Guard](assets/screenshots/ia-guard.png)
+
+A tela lista processos em execução com consumo de memória e uma classificação heurística. Essa classificação pode gerar falsos positivos e não confirma que um processo seja malware; não encerre processos apenas com base no rótulo. Os identificadores de processo e caminhos locais foram ocultados nesta captura.
+
+### Privacy Shield e Otimizador
+
+![Captura da tela Privacy Shield](assets/screenshots/privacy-shield-ia-guard.png)
+
+![Outra captura do Privacy Shield](assets/screenshots/privacy-shield-otimizador.png)
+
+As capturas mostram uma lista de processos e ações para encerrá-los. O título da área aparece como “PRIVACY SHIELD”, mas cada imagem destaca um item diferente no menu lateral; a seleção visual não corresponde ao título exibido. Confira o processo antes de usar uma ação de encerramento.
+
+### Radar de rede (Wi-Fi)
+
+![Tela Radar de Rede](assets/screenshots/radar-wifi.png)
+
+O radar apresenta adaptadores de rede e entradas da tabela ARP local — não é uma varredura da Internet nem uma confirmação de que cada dispositivo esteja conectado ao Wi-Fi. Endereços e detalhes dos adaptadores foram ocultados na captura.
 
 ---
 
