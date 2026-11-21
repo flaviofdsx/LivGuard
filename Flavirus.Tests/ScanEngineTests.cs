@@ -22,6 +22,19 @@ public class ScanEngineTests
         return yara;
     }
 
+    private sealed class ChunkedReadStream(byte[] content, int maxReadSize)
+        : MemoryStream(content)
+    {
+        public override ValueTask<int> ReadAsync(
+            Memory<byte> buffer,
+            CancellationToken cancellationToken = default)
+        {
+            return base.ReadAsync(
+                buffer[..Math.Min(buffer.Length, maxReadSize)],
+                cancellationToken);
+        }
+    }
+
     [Fact]
     public async Task Detects_Eicar()
     {
@@ -39,6 +52,46 @@ public class ScanEngineTests
             "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f",
             threat.Sha256);
         File.Delete(path);
+    }
+
+    [Fact]
+    public async Task Detects_Yara_Pattern_In_Large_TextFile()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "livguard_large_" + Guid.NewGuid() + ".txt");
+        var marker = System.Text.Encoding.ASCII.GetBytes("Invoke-WebRequest");
+        var fileSize = 51L * 1024 * 1024;
+
+        try
+        {
+            await using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write))
+            {
+                stream.SetLength(fileSize);
+                stream.Position = fileSize - marker.Length;
+                await stream.WriteAsync(marker);
+            }
+
+            using var db = new SignatureDatabase(":memory:");
+            var engine = new ScanEngine(db, LoadYara());
+            var result = await engine.ScanFileAsync(path);
+
+            var threat = Assert.Single(result.Threats);
+            Assert.Equal("Suspicious_PowerShell_Download", threat.RuleName);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task MatchAsync_Finds_Pattern_Across_Stream_Reads()
+    {
+        var content = System.Text.Encoding.ASCII.GetBytes("prefix Invoke-WebRequest suffix");
+        await using var stream = new ChunkedReadStream(content, 5);
+
+        var match = await LoadYara().MatchAsync(stream);
+
+        Assert.Equal("Suspicious_PowerShell_Download", match?.Name);
     }
 
     [Theory]

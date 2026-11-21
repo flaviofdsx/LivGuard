@@ -1,5 +1,8 @@
 ﻿using System.Management;
 using System.IO;
+using System.Diagnostics;
+using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,6 +16,49 @@ public partial class MainWindow : Window
 {
     private readonly DispatcherTimer _timer;
     private readonly DateTime _start = DateTime.UtcNow;
+    private readonly Queue<double> _dashboardCpuSamples = new();
+    private Canvas? _dashboardGraphCanvas;
+    private System.Windows.Shapes.Polyline? _dashboardGraphLine;
+    private TextBlock? _dashboardMetricsText;
+    private ulong? _previousIdleTime;
+    private ulong? _previousKernelTime;
+    private ulong? _previousUserTime;
+    private long? _previousNetworkBytes;
+    private long _previousNetworkTimestamp;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SystemFileTime
+    {
+        public uint Low;
+        public uint High;
+
+        public readonly ulong ToUInt64() => ((ulong)High << 32) | Low;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MemoryStatusEx
+    {
+        public uint Length;
+        public uint MemoryLoad;
+        public ulong TotalPhysical;
+        public ulong AvailablePhysical;
+        public ulong TotalPageFile;
+        public ulong AvailablePageFile;
+        public ulong TotalVirtual;
+        public ulong AvailableVirtual;
+        public ulong AvailableExtendedVirtual;
+    }
+
+    [DllImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetSystemTimes(
+        out SystemFileTime idleTime,
+        out SystemFileTime kernelTime,
+        out SystemFileTime userTime);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GlobalMemoryStatusEx(ref MemoryStatusEx buffer);
 
     public MainWindow()
     {
@@ -45,6 +91,155 @@ public partial class MainWindow : Window
                 ? (Brush)FindResource("AccentGreen") : (Brush)FindResource("AlertRed");
         }
         catch { }
+
+        UpdateDashboardMetrics();
+    }
+
+    private void UpdateDashboardMetrics()
+    {
+        if (_dashboardGraphCanvas is null
+            || _dashboardGraphLine is null
+            || _dashboardMetricsText is null
+            || !_dashboardGraphCanvas.IsVisible)
+            return;
+
+        var cpu = GetCpuUsagePercent();
+        var memory = GetMemoryUsagePercent();
+        var networkRate = GetNetworkRate();
+
+        if (cpu.HasValue)
+        {
+            _dashboardCpuSamples.Enqueue(cpu.Value);
+            while (_dashboardCpuSamples.Count > 60)
+                _dashboardCpuSamples.Dequeue();
+        }
+
+        _dashboardMetricsText.Text =
+            $"CPU: {FormatPercent(cpu)}  |  RAM: {FormatPercent(memory)}  |  Rede: {FormatNetworkRate(networkRate)}";
+        UpdateDashboardGraphLine();
+    }
+
+    private double? GetCpuUsagePercent()
+    {
+        if (!GetSystemTimes(out var idleTime, out var kernelTime, out var userTime))
+            return null;
+
+        var idle = idleTime.ToUInt64();
+        var kernel = kernelTime.ToUInt64();
+        var user = userTime.ToUInt64();
+        if (!_previousIdleTime.HasValue
+            || !_previousKernelTime.HasValue
+            || !_previousUserTime.HasValue
+            || idle < _previousIdleTime.Value
+            || kernel < _previousKernelTime.Value
+            || user < _previousUserTime.Value)
+        {
+            _previousIdleTime = idle;
+            _previousKernelTime = kernel;
+            _previousUserTime = user;
+            return null;
+        }
+
+        var idleDelta = idle - _previousIdleTime.Value;
+        var totalDelta = kernel - _previousKernelTime.Value + user - _previousUserTime.Value;
+        _previousIdleTime = idle;
+        _previousKernelTime = kernel;
+        _previousUserTime = user;
+
+        if (totalDelta == 0 || idleDelta > totalDelta)
+            return null;
+
+        return Math.Clamp((1d - idleDelta / (double)totalDelta) * 100d, 0d, 100d);
+    }
+
+    private static double? GetMemoryUsagePercent()
+    {
+        var status = new MemoryStatusEx
+        {
+            Length = (uint)Marshal.SizeOf<MemoryStatusEx>()
+        };
+        if (!GlobalMemoryStatusEx(ref status) || status.TotalPhysical == 0)
+            return null;
+
+        var used = status.TotalPhysical - Math.Min(status.TotalPhysical, status.AvailablePhysical);
+        return used * 100d / status.TotalPhysical;
+    }
+
+    private double? GetNetworkRate()
+    {
+        var totalBytes = GetNetworkBytesTransferred();
+        var timestamp = Stopwatch.GetTimestamp();
+        if (!totalBytes.HasValue)
+        {
+            _previousNetworkBytes = null;
+            _previousNetworkTimestamp = timestamp;
+            return null;
+        }
+
+        double? rate = null;
+        if (_previousNetworkBytes.HasValue
+            && totalBytes.Value >= _previousNetworkBytes.Value
+            && timestamp > _previousNetworkTimestamp)
+        {
+            rate = (totalBytes.Value - _previousNetworkBytes.Value)
+                * (double)Stopwatch.Frequency
+                / (timestamp - _previousNetworkTimestamp);
+        }
+
+        _previousNetworkBytes = totalBytes.Value;
+        _previousNetworkTimestamp = timestamp;
+        return rate;
+    }
+
+    private static long? GetNetworkBytesTransferred()
+    {
+        try
+        {
+            long totalBytes = 0;
+            foreach (var adapter in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (adapter.NetworkInterfaceType == NetworkInterfaceType.Loopback
+                    || adapter.OperationalStatus != OperationalStatus.Up)
+                    continue;
+
+                var statistics = adapter.GetIPStatistics();
+                totalBytes += statistics.BytesReceived + statistics.BytesSent;
+            }
+
+            return totalBytes;
+        }
+        catch (NetworkInformationException)
+        {
+            return null;
+        }
+    }
+
+    private static string FormatPercent(double? value) =>
+        value.HasValue ? $"{value.Value:F0}%" : "--";
+
+    private static string FormatNetworkRate(double? bytesPerSecond) =>
+        bytesPerSecond.HasValue ? $"{bytesPerSecond.Value / 1024d:F1} KB/s" : "--";
+
+    private void UpdateDashboardGraphLine()
+    {
+        if (_dashboardGraphCanvas is null || _dashboardGraphLine is null)
+            return;
+
+        var width = _dashboardGraphCanvas.ActualWidth;
+        var height = _dashboardGraphCanvas.ActualHeight;
+        if (width <= 0 || height <= 0)
+            return;
+
+        _dashboardGraphLine.Points.Clear();
+        var step = width / 59d;
+        var index = 0;
+        foreach (var sample in _dashboardCpuSamples)
+        {
+            var x = width - (_dashboardCpuSamples.Count - index - 1) * step;
+            var y = height - 4 - sample / 100d * (height - 8);
+            _dashboardGraphLine.Points.Add(new Point(x, y));
+            index++;
+        }
     }
 
     private void Nav_Click(object sender, RoutedEventArgs e)
@@ -2474,6 +2669,12 @@ public partial class MainWindow : Window
             "Créditos a Flaviofdsx, Lívia, Adrielle e Sidnei.",
             "Correções de navegação, build e tema."
         });
+        AddVersion("v1.2.0", "Live Graph", "Fase 7", new[]
+        {
+            "Gráfico de uso real da CPU, atualizado em tempo real.",
+            "Métricas atuais de memória RAM e tráfego de rede.",
+            "Varredura YARA em arquivos de até 500 MiB com leitura em blocos."
+        });
 
         scroll.Content = content;
         Grid.SetRow(scroll, 1);
@@ -2682,7 +2883,7 @@ public partial class MainWindow : Window
             {
                 X1 = 0,
                 Y1 = i * 30,
-                X2 = 1000,
+                X2 = canvas.ActualWidth,
                 Y2 = i * 30,
                 Stroke = new SolidColorBrush(Color.FromRgb(25, 35, 25))
             });
@@ -2692,18 +2893,25 @@ public partial class MainWindow : Window
             Stroke = (Brush)FindResource("AccentGreen"),
             StrokeThickness = 2
         };
-        var random = new Random();
-        for (var i = 0; i < 50; i++)
-            polyline.Points.Add(new Point(i * 15, 150 - random.Next(10, 130)));
         canvas.Children.Add(polyline);
-        graphStack.Children.Add(canvas);
-        graphStack.Children.Add(new TextBlock
+        canvas.SizeChanged += (_, _) =>
         {
-            Text = "Rede: 0.0 KB/s  |  CPU: monitorada  |  RAM: monitorada",
+            foreach (var gridLine in canvas.Children.OfType<System.Windows.Shapes.Line>())
+                gridLine.X2 = canvas.ActualWidth;
+            UpdateDashboardGraphLine();
+        };
+        graphStack.Children.Add(canvas);
+        var metricsText = new TextBlock
+        {
+            Text = "CPU: --  |  RAM: --  |  Rede: --",
             Foreground = (Brush)FindResource("TextMuted"),
             FontSize = 11,
             Margin = new Thickness(0, 10, 0, 0)
-        });
+        };
+        graphStack.Children.Add(metricsText);
+        _dashboardGraphCanvas = canvas;
+        _dashboardGraphLine = polyline;
+        _dashboardMetricsText = metricsText;
         graphCard.Child = graphStack;
         middleGrid.Children.Add(graphCard);
 

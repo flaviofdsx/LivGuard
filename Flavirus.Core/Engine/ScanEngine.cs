@@ -5,6 +5,7 @@ namespace Flavirus.Core.Engine;
 
 public class ScanEngine
 {
+    private const long MaxYaraScanBytes = 500L * 1024 * 1024;
     private readonly SignatureDatabase _db;
     private readonly YaraEngine _yara;
 
@@ -22,10 +23,16 @@ public class ScanEngine
             if (hit is not null) threats.Add(hit);
 
             var size = new FileInfo(filePath).Length;
-            if (size > 0 && size < 50 * 1024 * 1024)
+            if (size > 0 && size < MaxYaraScanBytes)
             {
-                var bytes = await File.ReadAllBytesAsync(filePath, ct);
-                var y = _yara.Match(bytes);
+                await using var stream = new FileStream(
+                    filePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite,
+                    bufferSize: 81920,
+                    useAsync: true);
+                var y = await _yara.MatchAsync(stream, ct);
                 if (y is not null && hit is null)
                     threats.Add(new ThreatInfo(filePath, y.Name, y.Severity,
                         y.Description, DateTime.UtcNow, sha));
