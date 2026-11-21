@@ -20,8 +20,8 @@ O LivGuard não é apenas um scanner; é uma suíte completa de segurança e mon
 
 ### 🛡️ Proteção em Tempo Real
 - **File System Shield:** Monitoramento contínuo da pasta `Downloads` e diretórios críticos via `FileSystemWatcher`. Bloqueia e isola arquivos maliciosos automaticamente.
-- **Web Shield & AdBlocker:** Bloqueio de domínios de phishing, rastreadores e anúncios indesejados.
-- **System Integrity:** Monitora alterações suspeitas no Registro do Windows.
+- **Web Shield:** Compara URLs com a lista local de domínios e subdomínios. Não intercepta HTTPS nem altera o proxy do sistema.
+- **System Integrity:** Detecta e registra alterações nas chaves Run/RunOnce de HKLM e HKCU, em modo somente leitura.
 - **Auto-Updater:** Verificação silenciosa de novas assinaturas em background (a cada 24h).
 
 ### 🧠 Motores de Varredura

@@ -9,17 +9,52 @@ public class WebShield
     {
         foreach (var p in patterns)
         {
-            if (p.Contains('/')) _blockedUrls.Add(p);
-            else _blockedDomains.Add(p);
+            var pattern = p.Trim();
+            if (pattern.Length == 0)
+                continue;
+
+            if (pattern.Contains('/'))
+                _blockedUrls.Add(pattern);
+            else
+                _blockedDomains.Add(pattern.TrimEnd('.'));
         }
     }
 
     public bool IsBlocked(string url)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
-        if (_blockedDomains.Contains(uri.Host)) return true;
+
+        var host = uri.IdnHost.TrimEnd('.');
+        if (_blockedDomains.Any(domain =>
+                host.Equals(domain, StringComparison.OrdinalIgnoreCase) ||
+                host.EndsWith("." + domain, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
         foreach (var b in _blockedUrls)
-            if (url.StartsWith(b, StringComparison.OrdinalIgnoreCase)) return true;
+        {
+            if (Uri.TryCreate(b, UriKind.Absolute, out var blockedUri))
+            {
+                if (!uri.Scheme.Equals(blockedUri.Scheme, StringComparison.OrdinalIgnoreCase) ||
+                    !host.Equals(blockedUri.IdnHost.TrimEnd('.'), StringComparison.OrdinalIgnoreCase) ||
+                    (!string.IsNullOrEmpty(blockedUri.Query) &&
+                     !uri.Query.Equals(blockedUri.Query, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                var blockedPath = blockedUri.AbsolutePath.TrimEnd('/');
+                var requestPath = uri.AbsolutePath.TrimEnd('/');
+                if (blockedPath.Length == 0 ||
+                    requestPath.Equals(blockedPath, StringComparison.OrdinalIgnoreCase) ||
+                    requestPath.StartsWith(blockedPath + "/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 }

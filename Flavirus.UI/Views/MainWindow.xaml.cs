@@ -2683,7 +2683,9 @@ public partial class MainWindow : Window
         {
             "Janela sem bordas redimensionável, com limites mínimos e moldura adaptável.",
             "Avisos in-app com animação para ações concluídas ou com erro.",
-            "Cartões de hardware com indicador animado enquanto os dados são carregados."
+            "Cartões de hardware com indicador animado enquanto os dados são carregados.",
+            "System Integrity monitora alterações nas chaves de inicialização do Registro.",
+            "Web Shield reconhece subdomínios sem depender de um proxy global."
         });
 
         scroll.Content = content;

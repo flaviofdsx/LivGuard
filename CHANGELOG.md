@@ -7,6 +7,8 @@
 - Janela sem bordas agora pode ser redimensionada, com moldura adaptável e tamanho mínimo.
 - Adicionados toasts animados para confirmar ações e apresentar erros sem diálogos modais desnecessários.
 - Cartões de hardware exibem um indicador animado durante o carregamento assíncrono; resultados de uma tela já fechada não são atualizados.
+- Web Shield compara domínios e subdomínios com limites de host, sem alterar o proxy do sistema ou instalar certificados.
+- System Integrity monitora, somente para leitura, alterações nas chaves Run/RunOnce de HKLM e HKCU e registra inclusões, alterações e remoções.
 
 ## [1.2.0] - 2026-11-21
 

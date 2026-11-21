@@ -26,6 +26,7 @@ public partial class App : Application
     public static VaultManager Vault { get; private set; } = null!;
     public static bool GameMode { get; private set; }
     private static FileSystemWatcher? _realTimeWatcher;
+    private static CancellationTokenSource? _integrityMonitorCancellation;
     private static readonly WindowsPowerPlanManager PowerPlanManager = new();
 
     protected override void OnStartup(StartupEventArgs e)
@@ -51,6 +52,15 @@ public partial class App : Application
             Web = new WebShield();
             Web.LoadFromList(new[] { "malware-test.com", "phishing-example.org" });
             Behavior = new BehaviorShield();
+            try
+            {
+                StartSystemIntegrityMonitoring();
+            }
+            catch (Exception ex)
+            {
+                LogEvent("SYSTEM INTEGRITY", $"Monitoramento indisponível: {ex.Message}");
+            }
+
             Quarantine = new QuarantineManager(Path.Combine(DataDirectory, Config.QuarantinePath));
             Vault = new VaultManager(
                 Path.Combine(DataDirectory, Config.VaultPath),
@@ -83,6 +93,8 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _integrityMonitorCancellation?.Cancel();
+        _integrityMonitorCancellation?.Dispose();
         var result = PowerPlanManager.TryRestore();
         Engine?.Dispose();
         if (!result.Success)
@@ -95,6 +107,48 @@ public partial class App : Application
         }
 
         base.OnExit(e);
+    }
+
+    private static void StartSystemIntegrityMonitoring()
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        var integrity = new SystemIntegrity();
+        integrity.CaptureBaseline();
+        var cancellation = new CancellationTokenSource();
+        _integrityMonitorCancellation = cancellation;
+        _ = MonitorSystemIntegrityAsync(integrity, cancellation.Token);
+    }
+
+    private static async Task MonitorSystemIntegrityAsync(
+        SystemIntegrity integrity,
+        CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                try
+                {
+                    var changes = await Task.Run(integrity.DetectChanges, cancellationToken);
+                    foreach (var change in changes)
+                        LogEvent("SYSTEM INTEGRITY", change);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    LogEvent("SYSTEM INTEGRITY", $"Falha ao consultar chaves de inicialização: {ex.Message}");
+                }
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
     }
 
     public static (bool Success, string Error) SetGameModePowerPlan(bool enabled) =>

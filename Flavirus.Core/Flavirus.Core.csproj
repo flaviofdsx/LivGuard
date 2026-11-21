@@ -16,6 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Flavirus.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Data\rules.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
