@@ -2675,7 +2675,8 @@ public partial class MainWindow : Window
             "Varredura YARA em blocos para arquivos menores que 500 MiB.",
             "Assinaturas EICAR e de notas de resgate, cobertas por testes xUnit seguros.",
             "Modo Jogo tenta ativar Alto Desempenho e restaura o plano anterior quando disponível.",
-            "Licença MIT, EditorConfig, atributos Git e CI Windows com .NET 11."
+            "Licença MIT, EditorConfig, atributos Git e CI Windows com .NET 11.",
+            "Manifesto solicita elevação UAC e habilita DPI por monitor."
         });
 
         scroll.Content = content;
