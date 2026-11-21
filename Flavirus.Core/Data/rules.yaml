@@ -14,11 +14,12 @@
     - "IEX("
   hex: []
 
-- name: Ransomware_Note_Pattern
-  description: Possivel nota de resgate
+- name: Ransomware_Note_Standard
+  description: Nota de resgate deixada por ransomware
   severity: 3
   strings:
     - "your files have been encrypted"
+    - "All your files are encrypted"
     - "sua conta sera deletada"
     - "bitcoin address"
   hex: []

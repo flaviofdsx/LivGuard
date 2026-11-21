@@ -65,8 +65,10 @@ public class ScanEngineTests
         Assert.Equal("EICAR_Test_File", rule?.Name);
     }
 
-    [Fact]
-    public async Task Detects_Ransomware_Note_In_TempFile()
+    [Theory]
+    [InlineData("All your files are encrypted. Send 1 Bitcoin to this address.")]
+    [InlineData("your files have been encrypted. Send 1 Bitcoin to this address.")]
+    public async Task Detects_Ransomware_Note_In_TempFile(string content)
     {
         var path = Path.Combine(
             Path.GetTempPath(),
@@ -74,16 +76,14 @@ public class ScanEngineTests
 
         try
         {
-            await File.WriteAllTextAsync(
-                path,
-                "All your files have been encrypted. Send 1 Bitcoin to this address.");
+            await File.WriteAllTextAsync(path, content);
 
             using var db = new SignatureDatabase(":memory:");
             var engine = new ScanEngine(db, LoadYara());
             var result = await engine.ScanFileAsync(path);
 
             var threat = Assert.Single(result.Threats);
-            Assert.Equal("Ransomware_Note_Pattern", threat.RuleName);
+            Assert.Equal("Ransomware_Note_Standard", threat.RuleName);
         }
         finally
         {
