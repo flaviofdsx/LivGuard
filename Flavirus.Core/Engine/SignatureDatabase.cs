@@ -68,6 +68,15 @@ public class SignatureDatabase : IDisposable
 
     public void AddSignature(string hash, string name, ThreatSeverity sev, string desc)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(hash);
+        if (!IsSha256Hash(hash))
+        {
+            throw new ArgumentException(
+                "Only 64-character SHA-256 hashes can be stored.",
+                nameof(hash));
+        }
+
+        hash = hash.ToLowerInvariant();
         using var cmd = _conn.CreateCommand();
         cmd.CommandText = "INSERT OR REPLACE INTO Signatures(Hash,Name,Severity,Description) VALUES($h,$n,$s,$d)";
         cmd.Parameters.AddWithValue("$h", hash);
@@ -76,6 +85,13 @@ public class SignatureDatabase : IDisposable
         cmd.Parameters.AddWithValue("$d", desc);
         cmd.ExecuteNonQuery();
     }
+
+    public static bool IsSha256Hash(string? hash) =>
+        hash is { Length: 64 } &&
+        hash.All(character =>
+            (character >= '0' && character <= '9') ||
+            (character >= 'a' && character <= 'f') ||
+            (character >= 'A' && character <= 'F'));
 
     public void Dispose() => _conn.Dispose();
 }

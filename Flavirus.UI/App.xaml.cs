@@ -84,6 +84,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         var result = PowerPlanManager.TryRestore();
+        Engine?.Dispose();
         if (!result.Success)
         {
             MessageBox.Show(

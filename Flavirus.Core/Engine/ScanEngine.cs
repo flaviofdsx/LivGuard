@@ -3,7 +3,7 @@ using Flavirus.Core.Models;
 
 namespace Flavirus.Core.Engine;
 
-public class ScanEngine
+public sealed class ScanEngine : IDisposable
 {
     private const long MaxYaraScanBytes = 500L * 1024 * 1024;
     private readonly SignatureDatabase _db;
@@ -25,14 +25,7 @@ public class ScanEngine
             var size = new FileInfo(filePath).Length;
             if (size > 0 && size < MaxYaraScanBytes)
             {
-                await using var stream = new FileStream(
-                    filePath,
-                    FileMode.Open,
-                    FileAccess.Read,
-                    FileShare.ReadWrite,
-                    bufferSize: 81920,
-                    useAsync: true);
-                var y = await _yara.MatchAsync(stream, ct);
+                var y = await Task.Run(() => _yara.MatchFile(filePath), ct);
                 if (y is not null && hit is null)
                     threats.Add(new ThreatInfo(filePath, y.Name, y.Severity,
                         y.Description, DateTime.UtcNow, sha));
@@ -64,4 +57,6 @@ public class ScanEngine
         sw.Stop();
         return new ScanResult(root, count, threats.Count, sw.Elapsed, threats);
     }
+
+    public void Dispose() => _yara.Dispose();
 }

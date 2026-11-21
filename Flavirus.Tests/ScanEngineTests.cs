@@ -5,6 +5,26 @@ namespace Flavirus.Tests;
 
 public class ScanEngineTests
 {
+    [Fact]
+    public void NativeYara_Compiles_And_Matches_A_Basic_Rule()
+    {
+        using var yara = new YaraEngine();
+        yara.LoadRules(new[]
+        {
+            new YaraRule(
+                "NativeRule",
+                "Test rule",
+                Flavirus.Core.Models.ThreatSeverity.Low,
+                new[] { "NativePattern" },
+                Array.Empty<byte[]>())
+        });
+
+        var match = yara.Match(System.Text.Encoding.ASCII.GetBytes(
+            "prefix NativePattern suffix"));
+
+        Assert.Equal("NativeRule", match?.Name);
+    }
+
     private static YaraEngine LoadYara()
     {
         var candidates = new[]
@@ -43,7 +63,7 @@ public class ScanEngineTests
             "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*");
 
         using var db = new SignatureDatabase(":memory:");
-        var engine = new ScanEngine(db, new YaraEngine());
+        using var engine = new ScanEngine(db, LoadYara());
         var r = await engine.ScanFileAsync(path);
 
         var threat = Assert.Single(r.Threats);
@@ -60,7 +80,8 @@ public class ScanEngineTests
         var content = System.Text.Encoding.ASCII.GetBytes(
             "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*");
 
-        var rule = LoadYara().Match(content);
+        using var yara = LoadYara();
+        var rule = yara.Match(content);
 
         Assert.Equal("EICAR_Test_File", rule?.Name);
     }
@@ -79,7 +100,7 @@ public class ScanEngineTests
             await File.WriteAllTextAsync(path, content);
 
             using var db = new SignatureDatabase(":memory:");
-            var engine = new ScanEngine(db, LoadYara());
+            using var engine = new ScanEngine(db, LoadYara());
             var result = await engine.ScanFileAsync(path);
 
             var threat = Assert.Single(result.Threats);
@@ -108,7 +129,7 @@ public class ScanEngineTests
             }
 
             using var db = new SignatureDatabase(":memory:");
-            var engine = new ScanEngine(db, LoadYara());
+            using var engine = new ScanEngine(db, LoadYara());
             var result = await engine.ScanFileAsync(path);
 
             var threat = Assert.Single(result.Threats);
@@ -126,7 +147,8 @@ public class ScanEngineTests
         var content = System.Text.Encoding.ASCII.GetBytes("prefix Invoke-WebRequest suffix");
         await using var stream = new ChunkedReadStream(content, 5);
 
-        var match = await LoadYara().MatchAsync(stream);
+        using var yara = LoadYara();
+        var match = await yara.MatchAsync(stream);
 
         Assert.Equal("Suspicious_PowerShell_Download", match?.Name);
     }
@@ -137,10 +159,46 @@ public class ScanEngineTests
     [InlineData("perfc.dat", "Heuristica_NotPetya_NaoVerificada")]
     public void Detects_UnverifiedMalwareIndicators(string indicator, string expectedRule)
     {
-        var yara = LoadYara();
+        using var yara = LoadYara();
         var rule = yara.Match(System.Text.Encoding.ASCII.GetBytes(indicator));
 
         Assert.NotNull(rule);
         Assert.Equal(expectedRule, rule.Name);
+    }
+
+    [Fact]
+    public void PEAnalyzer_Parses_Managed_PE_Headers()
+    {
+        var analyzer = new PEAnalyzer();
+        var result = analyzer.Analyze(typeof(ScanEngineTests).Assembly.Location);
+
+        Assert.True(result.IsPortableExecutable, result.AnalysisError);
+        Assert.False(string.IsNullOrWhiteSpace(result.Machine));
+        Assert.True(result.FileSize > 0);
+        Assert.NotEmpty(result.ImportedLibraries);
+    }
+
+    [Theory]
+    [InlineData("d41d8cd98f00b204e9800998ecf8427e")]
+    [InlineData("not-a-sha256")]
+    public void SignatureDatabase_Rejects_NonSha256_Hashes(string hash)
+    {
+        using var database = new SignatureDatabase(":memory:");
+
+        Assert.Throws<ArgumentException>(() => database.AddSignature(
+            hash, "Invalid", Flavirus.Core.Models.ThreatSeverity.Low, "Invalid test hash"));
+    }
+
+    [Fact]
+    public void SignatureDatabase_Normalizes_Uppercase_Sha256()
+    {
+        const string hash = "ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789";
+        using var database = new SignatureDatabase(":memory:");
+
+        database.AddSignature(
+            hash, "Test", Flavirus.Core.Models.ThreatSeverity.High, "Test signature");
+
+        var match = database.Match(hash.ToLowerInvariant(), "test.bin");
+        Assert.Equal("Test", match?.RuleName);
     }
 }

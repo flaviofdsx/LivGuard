@@ -26,7 +26,8 @@ O LivGuard não é apenas um scanner; é uma suíte completa de segurança e mon
 
 ### 🧠 Motores de Varredura
 - **Varredura por Hash (SHA-256):** Comparação rápida com banco de dados SQLite.
-- **Regras YARA:** Assinaturas EICAR e de notas de resgate, com varredura em blocos para arquivos menores que 500 MiB.
+- **Regras YARA:** Detecção pelo mecanismo nativo libyara usando as assinaturas locais; arquivos menores que 500 MiB são analisados.
+- **Analisador PE:** Lê cabeçalhos, arquitetura, bibliotecas e funções importadas. Indicadores de API são heurísticos e não provocam quarentena automática.
 - **Memory Scanner:** Varredura de processos em execução na RAM (detecção de fileless malware).
 - **AI File Analyzer:** Heurística simulada por Machine Learning para identificar "droppers".
 
@@ -45,6 +46,17 @@ O LivGuard não é apenas um scanner; é uma suíte completa de segurança e mon
 - **Cofre (Vault):** Criptografia AES-256 para arquivos confidenciais.
 - **Quarentena:** Isolamento seguro de arquivos infectados com opção de restauração.
 - **Telegram Bot:** Envio de alertas de segurança direto no seu celular.
+
+### Atualizar hashes de assinatura
+
+O atualizador consulta as detecções recentes do MalwareBazaar e grava somente hashes SHA-256 — não baixa amostras. É necessária uma chave da API configurada na variável de ambiente `MALWAREBAZAAR_AUTH_KEY`:
+
+```powershell
+$env:MALWAREBAZAAR_AUTH_KEY = "<sua-chave>"
+dotnet run --project Flavirus.Updater
+```
+
+O banco compartilhado com o aplicativo fica em `%LOCALAPPDATA%\LivGuard\signatures.db`. A assinatura local do EICAR continua disponível sem chave externa.
 
 ---
 
