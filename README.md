@@ -28,7 +28,7 @@ O LivGuard não é apenas um scanner; é uma suíte completa de segurança e mon
 - **Varredura por Hash (SHA-256):** Comparação rápida com banco de dados SQLite.
 - **Regras YARA:** Detecção pelo mecanismo nativo libyara usando as assinaturas locais; arquivos menores que 500 MiB são analisados.
 - **Analisador PE:** Lê cabeçalhos, arquitetura, bibliotecas e funções importadas. Indicadores de API são heurísticos e não provocam quarentena automática.
-- **Memory Scanner:** Varredura de processos em execução na RAM (detecção de fileless malware).
+- **Memory Scanner:** Aplica as regras YARA locais à memória dos processos acessíveis, sem gerar dumps nem alterar ou encerrar processos. Processos críticos são ignorados; correspondências são indicadores e podem incluir falsos positivos.
 - **AI File Analyzer:** Heurística simulada por Machine Learning para identificar "droppers".
 
 ### 🎮 Interface & Usabilidade (Predator Edition)

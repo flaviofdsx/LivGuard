@@ -116,6 +116,30 @@ public sealed class YaraEngine : IDisposable
         }
     }
 
+    public IReadOnlyList<YaraRule> ScanProcessMemory(int processId)
+    {
+        if (processId <= 0)
+            throw new ArgumentOutOfRangeException(nameof(processId));
+
+        lock (_sync)
+        {
+            ThrowIfDisposed();
+            if (_compiledRules is null)
+                return Array.Empty<YaraRule>();
+
+            lock (NativeSync)
+            {
+                var scanner = new Scanner();
+                return scanner.ScanProcess(processId, _compiledRules)
+                    .Select(result => GetRule(result.MatchingRule.Identifier))
+                    .Where(rule => rule is not null)
+                    .Select(rule => rule!)
+                    .DistinctBy(rule => rule.Name)
+                    .ToArray();
+            }
+        }
+    }
+
     public async Task<YaraRule?> MatchAsync(
         Stream content,
         CancellationToken cancellationToken = default)

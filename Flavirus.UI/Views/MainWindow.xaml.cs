@@ -18,6 +18,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _timer;
     private readonly DateTime _start = DateTime.UtcNow;
     private readonly Queue<double> _dashboardCpuSamples = new();
+    private CancellationTokenSource? _memoryScanCancellation;
     private Canvas? _dashboardGraphCanvas;
     private System.Windows.Shapes.Polyline? _dashboardGraphLine;
     private TextBlock? _dashboardMetricsText;
@@ -247,6 +248,7 @@ public partial class MainWindow : Window
     {
         if (sender is Button btn && btn.Tag is string tag)
         {
+            _memoryScanCancellation?.Cancel();
             switch (tag)
             {
                 case "Painel": ShowPanel(); break;
@@ -1192,25 +1194,9 @@ public partial class MainWindow : Window
 
         var memory = CreateActionButton(
             "PROCESSOS EM MEMÓRIA",
-            "Lista os processos em execução",
-            "INSPECIONAR",
-            async () =>
-            {
-                await Task.Run(() =>
-                {
-                    _ = System.Diagnostics.Process.GetProcesses()
-                        .OrderByDescending(process =>
-                        {
-                            try { return process.WorkingSet64; }
-                            catch { return 0; }
-                        })
-                        .Take(100)
-                        .Count();
-                });
-                MessageBox.Show(
-                    "Inspeção concluída. A análise avançada de shellcode ainda não está implementada.",
-                    "LivGuard");
-            });
+            "Varredura YARA somente leitura",
+            "ESCANEAR",
+            RunMemoryScanAsync);
         Grid.SetColumn(memory, 3);
         buttons.Children.Add(memory);
 
@@ -1263,6 +1249,171 @@ public partial class MainWindow : Window
         Grid.SetRow(progressBorder, 2);
         mainGrid.Children.Add(progressBorder);
         ContentArea.Children.Add(mainGrid);
+    }
+
+    private async Task RunMemoryScanAsync()
+    {
+        _memoryScanCancellation?.Cancel();
+        var cancellation = new CancellationTokenSource();
+        _memoryScanCancellation = cancellation;
+
+        ContentArea.Children.Clear();
+        var scanGrid = new Grid();
+        scanGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        scanGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+        var header = new Grid { Margin = new Thickness(0, 0, 0, 20) };
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var title = new StackPanel();
+        title.Children.Add(new TextBlock
+        {
+            Text = "MEMORY SCANNER",
+            Foreground = (Brush)FindResource("AccentCyan"),
+            FontSize = 28,
+            FontWeight = FontWeights.Bold
+        });
+        title.Children.Add(new TextBlock
+        {
+            Text = "Análise YARA somente leitura; o cancelamento aguarda o processo atual.",
+            Foreground = (Brush)FindResource("TextMuted"),
+            FontSize = 13,
+            Margin = new Thickness(0, 5, 0, 0)
+        });
+        header.Children.Add(title);
+
+        var cancelButton = new Button
+        {
+            Content = "CANCELAR",
+            Background = Brushes.Transparent,
+            Foreground = (Brush)FindResource("AlertRed"),
+            BorderBrush = (Brush)FindResource("AlertRed"),
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(12, 6, 12, 6),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        cancelButton.Click += (_, _) => cancellation.Cancel();
+        Grid.SetColumn(cancelButton, 1);
+        header.Children.Add(cancelButton);
+        scanGrid.Children.Add(header);
+
+        var content = new StackPanel();
+        var status = new TextBlock
+        {
+            Text = "Iniciando varredura de memória...",
+            Foreground = (Brush)FindResource("AccentCyan"),
+            FontSize = 14,
+            FontWeight = FontWeights.Bold,
+            TextWrapping = TextWrapping.Wrap
+        };
+        content.Children.Add(status);
+        content.Children.Add(new TextBlock
+        {
+            Text = "Correspondências YARA são indicadores para análise; nenhum processo será encerrado ou alterado.",
+            Foreground = (Brush)FindResource("TextMuted"),
+            FontSize = 12,
+            Margin = new Thickness(0, 6, 0, 12),
+            TextWrapping = TextWrapping.Wrap
+        });
+        var results = new StackPanel();
+        content.Children.Add(results);
+        var scroll = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Content = content
+        };
+        Grid.SetRow(scroll, 1);
+        scanGrid.Children.Add(scroll);
+        ContentArea.Children.Add(scanGrid);
+
+        bool IsCurrentScan() =>
+            ContentArea.Children.Count > 0 &&
+            ReferenceEquals(ContentArea.Children[0], scanGrid);
+
+        var isScanning = true;
+        try
+        {
+            var progress = new Progress<string>(message =>
+            {
+                if (isScanning && IsCurrentScan())
+                    status.Text = message;
+            });
+            var report = await App.MemoryScanner.ScanAllProcessesAsync(
+                progress,
+                cancellation.Token);
+            isScanning = false;
+
+            if (!IsCurrentScan())
+                return;
+
+            status.Text =
+                $"Concluída: {report.ProcessesScanned} analisados, " +
+                $"{report.ProcessesSkipped} ignorados, " +
+                $"{report.Findings.Count} processo(s) com correspondências, " +
+                $"{report.Issues.Count} falha(s) de acesso.";
+            status.Foreground = report.Findings.Count > 0
+                ? (Brush)FindResource("AlertRed")
+                : report.Issues.Count > 0
+                    ? (Brush)FindResource("AccentCyan")
+                    : (Brush)FindResource("AccentGreen");
+
+            foreach (var finding in report.Findings)
+            {
+                results.Children.Add(CreateCard(
+                    $"{finding.ProcessName} (PID {finding.ProcessId})",
+                    "Regras: " + string.Join(
+                        ", ",
+                        finding.MatchingRules.Select(rule => rule.Name)),
+                    "Correspondência indicativa; processo não alterado.",
+                    (Brush)FindResource("AlertRed")));
+            }
+
+            foreach (var issue in report.Issues.Take(20))
+            {
+                results.Children.Add(CreateCard(
+                    $"{issue.ProcessName} (PID {issue.ProcessId})",
+                    "Processo não analisado.",
+                    issue.Message,
+                    (Brush)FindResource("TextMuted")));
+            }
+
+            if (report.Issues.Count > 20)
+            {
+                results.Children.Add(new TextBlock
+                {
+                    Text = $"Mais {report.Issues.Count - 20} falha(s) não exibida(s).",
+                    Foreground = (Brush)FindResource("TextMuted"),
+                    FontSize = 11,
+                    Margin = new Thickness(0, 4, 0, 0)
+                });
+            }
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            isScanning = false;
+            if (IsCurrentScan())
+            {
+                status.Text = "Varredura cancelada. Nenhum processo foi alterado.";
+                status.Foreground = (Brush)FindResource("TextMuted");
+            }
+        }
+        catch (Exception ex)
+        {
+            isScanning = false;
+            if (IsCurrentScan())
+            {
+                status.Text = $"Falha na varredura: {ex.Message}";
+                status.Foreground = (Brush)FindResource("AlertRed");
+            }
+        }
+        finally
+        {
+            isScanning = false;
+            cancelButton.IsEnabled = false;
+            if (ReferenceEquals(_memoryScanCancellation, cancellation))
+                _memoryScanCancellation = null;
+            cancellation.Dispose();
+        }
     }
 
     private Border CreateActionButton(
@@ -2685,7 +2836,8 @@ public partial class MainWindow : Window
             "Avisos in-app com animação para ações concluídas ou com erro.",
             "Cartões de hardware com indicador animado enquanto os dados são carregados.",
             "System Integrity monitora alterações nas chaves de inicialização do Registro.",
-            "Web Shield reconhece subdomínios sem depender de um proxy global."
+            "Web Shield reconhece subdomínios sem depender de um proxy global.",
+            "Memory Scanner aplica regras YARA, somente para leitura, a processos acessíveis."
         });
 
         scroll.Content = content;
@@ -3194,7 +3346,13 @@ public partial class MainWindow : Window
     }
 
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
-    private void Close_Click(object sender, RoutedEventArgs e) => Hide();
+    private void Close_Click(object sender, RoutedEventArgs e)
+    {
+        CancelMemoryScan();
+        Hide();
+    }
+
+    internal void CancelMemoryScan() => _memoryScanCancellation?.Cancel();
 
     private void Window_MouseDown(object sender, MouseButtonEventArgs e)
     {

@@ -19,6 +19,7 @@ public partial class App : Application
         "LivGuard");
     public static FlavirusConfig Config { get; } = new();
     public static ScanEngine Engine { get; private set; } = null!;
+    public static MemoryScanner MemoryScanner { get; private set; } = null!;
     public static WebShield Web { get; private set; } = null!;
     public static BehaviorShield Behavior { get; private set; } = null!;
     public static RansomwareShield? Ransomware { get; private set; }
@@ -49,6 +50,7 @@ public partial class App : Application
             if (!File.Exists(rulesPath)) rulesPath = Path.Combine(baseDir, "rules.yaml");
             if (File.Exists(rulesPath)) yara.LoadRules(RuleLoader.LoadFromYaml(rulesPath));
             Engine = new ScanEngine(db, yara);
+            MemoryScanner = new MemoryScanner(yara);
             Web = new WebShield();
             Web.LoadFromList(new[] { "malware-test.com", "phishing-example.org" });
             Behavior = new BehaviorShield();
@@ -95,6 +97,9 @@ public partial class App : Application
     {
         _integrityMonitorCancellation?.Cancel();
         _integrityMonitorCancellation?.Dispose();
+        if (MainWindow is Views.MainWindow mainWindow)
+            mainWindow.CancelMemoryScan();
+
         var result = PowerPlanManager.TryRestore();
         Engine?.Dispose();
         if (!result.Success)
